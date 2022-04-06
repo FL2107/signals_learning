@@ -127,3 +127,22 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+PAMAP2_Dataset/PAMAP2_Dataset/DataCollectionProtocol.pdf
+PAMAP2_Dataset/PAMAP2_Dataset/DescriptionOfActivities.pdf
+PAMAP2_Dataset/PAMAP2_Dataset/Optional/subject101.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Optional/subject105.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Optional/subject106.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Optional/subject108.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Optional/subject109.dat
+PAMAP2_Dataset/PAMAP2_Dataset/PerformedActivitiesSummary.pdf
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject101.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject102.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject103.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject104.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject105.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject106.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject107.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject108.dat
+PAMAP2_Dataset/PAMAP2_Dataset/Protocol/subject109.dat
+PAMAP2_Dataset/PAMAP2_Dataset/readme.pdf
+PAMAP2_Dataset/PAMAP2_Dataset/subjectInformation.pdf
