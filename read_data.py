@@ -14,7 +14,14 @@ good_cols = ['activityID', 'heart rate', 'temperature hand',\
              '3Dg_x chest', '3Dg_y chest', '3Dg_z chest', '3Dm_x chest', '3Dm_y chest', '3Dm_z chest', \
              'temperature ankle', '3Da_x scale_16 ankle', '3Da_y scale_16 ankle', '3Da_z scale_16 ankle', \
              '3Dg_x ankle', '3Dg_y ankle', '3Dg_z ankle', '3Dm_x ankle', '3Dm_y ankle', '3Dm_z ankle']
-    
+
+def y_encode(y_data):
+    y_targ = np.zeros_like(y_data)
+    code = list(np.unique(y_data))
+    for i, el in enumerate(y_data):
+        y_targ[i] = code.index(el)
+        
+    return np.array(y_targ, dtype = np.int32)
 
 def generate_batches(X, y, batch_size=64):
     for i in range(0, X.shape[0], batch_size):
@@ -143,6 +150,15 @@ def get_df(): # Добавить выбор файлов для загрузки
     return adf
 
 
+def get_flatten(data):
+    flat_data = []
+    for el in data:
+        flat = []
+        for col in el:
+            flat += list(col)
+        flat_data.append(flat)
+        
+    return np.array(flat_data)
 
 
 
