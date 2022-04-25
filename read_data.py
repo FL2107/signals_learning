@@ -55,7 +55,7 @@ def cut_act(df, cut_len, count=-1, random_start = False) -> pd.DataFrame:
     random start works with due regard for count
     '''
     tdf = pd.DataFrame(columns=good_cols, dtype = object)
-    for i in range(len(df)):
+    for i in tqdm(range(len(df))):
         l = len(df.iloc[i]['heart rate'])
         start = np.random.randint(0, l-count*(l//count)+1) if random_start else 0
         el = np.array(df.iloc[i], dtype = object)
