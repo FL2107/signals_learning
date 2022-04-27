@@ -28,24 +28,24 @@ def generate_batches(X, y, batch_size=64):
         X_batch, y_batch = X[i:i+batch_size], y[i:i+batch_size]
         yield X_batch, y_batch
 
-def normalize_array(arr) -> np.ndarray:
-    x_min = min(arr)
-    x_max = max(arr)
-    if x_min != x_max:
-        return (arr-x_min)/(x_max-x_min)
-    else:
-        return 0*arr
-    
-
-def normalize_df(df) -> pd.DataFrame: # Доделать
+def normalize_arr(X_data) -> pd.DataFrame:
     arr = []
-    for i in range(len(df)):
-        arr.append([df.iloc[i]['activityID']])
-        for el in df.iloc[i][1:]:
-            arr[i].append(normalize_array(el))
-    
-#     print(arr)
-    return pd.DataFrame(arr, columns=good_cols, dtype = object)
+    for col in X_data.T:
+        col_arr = np.array(list(col), dtype=np.float64)
+        
+        x_mean = np.mean(col_arr, axis=(0,1))
+        x_var = np.var(col_arr, axis=(0,1))
+        col_arr -= x_mean
+        if x_var:
+            col_arr /= x_var
+        else:
+            col_arr *= 0
+        
+        arr.append(col_arr)
+        
+        
+    arr = np.transpose(np.array(arr, dtype=object), [1,0,2])
+    return arr
 
 
 def cut_act(df, cut_len, count=-1, random_start = False) -> pd.DataFrame:
