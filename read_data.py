@@ -57,9 +57,8 @@ def cut_act(df, cut_len, count=-1, random_start = False) -> pd.DataFrame:
     tdf = pd.DataFrame(columns=good_cols, dtype = object)
     for i in tqdm(range(len(df))):
         l = len(df.iloc[i]['heart rate'])
-        start = np.random.randint(0, l-count*(l//count)+1) if random_start else 0
+        start = np.random.randint(0, l-count*(l//count)+1) if random_start and count !=-1 else 0
         el = np.array(df.iloc[i], dtype = object)
-#         print(el[1], '\n')
         for j in range(start, l-cut_len, cut_len):
             if j//cut_len == count:
                 break
@@ -67,8 +66,6 @@ def cut_act(df, cut_len, count=-1, random_start = False) -> pd.DataFrame:
             for k in range(1, len(el)):
                 new_el.append(el[k][j:j+cut_len])
             tdf = tdf.append(pd.DataFrame([new_el], columns=good_cols))
-#             pd.DataFrame.append()
-#             print(tdf, '\n')
     
     tdf.index = pd.Int64Index(list(range(len(tdf))))
     return tdf
