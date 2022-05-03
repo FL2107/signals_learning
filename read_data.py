@@ -48,6 +48,46 @@ def normalize_arr(X_data) -> pd.DataFrame:
     return arr
 
 
+def normalize_dif_len(X_data) -> pd.DataFrame: # Исправить
+    arr = []
+    got_lenghts = False
+    for col in X_data.T:
+        
+        colflat = [] 
+        if not got_lenghts:
+            lengths = []
+        for traj_arr in col:
+            colflat += list(traj_arr)
+            if not got_lenghts:
+                lengths.append(len(traj_arr))
+        
+        if not got_lenghts:
+            got_lenghts = True
+            
+        col_arr = np.array(colflat, dtype=np.float64)
+        
+        x_mean = np.mean(col_arr)
+        x_var = np.var(col_arr)
+        col_arr -= x_mean
+        if x_var:
+            col_arr /= x_var
+        else:
+            col_arr *= 0
+        
+        col_arr_reshaped = []
+        start = 0
+        for i in range(len(lengths)):
+            traj_arr = col_arr[start:start+lengths[i]]
+            start += lengths[i]
+            col_arr_reshaped.append(traj_arr)
+            
+        arr.append(col_arr_reshaped)
+        
+        
+    return np.array(arr, dtype=object).T
+
+
+
 def cut_act(df, cut_len, count=-1, random_start = False) -> pd.DataFrame:
     '''
     Consideres that cut_len is le to the lenght of all activities
