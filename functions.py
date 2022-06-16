@@ -197,6 +197,51 @@ def get_flatten(data):
         
     return np.array(flat_data)
 
+class SignalDataset(torch.utils.data.Dataset):
+    def __init__(self, data_X, data_Y):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.X = data_X
+        self.Y = data_Y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        input_data = self.X[idx]
+        label = self.Y[idx]
+        
+        return input_data, label
+
+def get_equal_len(X, need_len=-1, fill_with=0): # Доделать
+    '''
+    By default sets all signals to len of signal with maximum length, putting fill_with to the end of signal
+    If you know precise len you need, it can be changed, signals with bigger lenght would be cutted
+    '''
+    if need_len == -1:
+        max_len = -1
+        for sig_arr in X.T[0]:
+            max_len = max(max_len, len(sig_arr))
+        
+        X_eq = []    
+        for sig in X:
+            sig_arr = np.array(list(sig), dtype=np.float64)
+#             print(sig_arr.shape, max_len)
+            z = np.zeros((sig_arr.shape[0], max_len-sig_arr.shape[1]), dtype=np.float64)
+            new_arr = np.concatenate((sig_arr,z), axis=1)
+#             print(new_arr.shape, max_len)
+            X_eq.append(new_arr)
+        return np.array(X_eq, dtype = np.float64)
+        
+    else: # Пока не сделано
+        pass
+    
 
 
-
+    
+    
