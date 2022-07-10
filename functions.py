@@ -5,6 +5,8 @@ from tqdm import tqdm
 from pathlib import Path
 from skimage import transform
 import torch
+from typing import Union 
+from sklearn.model_selection import train_test_split
 
 
 good_cols = ['activityID', 'heart rate', 'temperature hand',\
@@ -240,8 +242,111 @@ def get_equal_len(X, need_len=-1, fill_with=0): # Доделать
         
     else: # Пока не сделано
         pass
+
+def get_mse_delta(y_true: torch.Tensor, y_net: torch.Tensor) -> float:
+    loss = torch.nn.MSELoss()
+    delta = loss(y_true, y_net).item()
+    return delta
+
+def get_max_error(y_true: Union[list, np.ndarray], y_net: Union[list, np.ndarray]) -> float:
+    a = np.abs((np.array(y_true)-np.array(y_net))/(np.array(y_true)+ 1e-8)*100)
+    return np.max(a)
+
+def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
+    x = np.arange(sig_len)
+    b0 = 2*np.sin(x*sin_periods/sig_len*2*np.pi)
+    b1 = 20*np.sin(x*sin_periods/sig_len*2*np.pi)
+    b2 = 2*np.ones((sig_len))
+    b3 = 5*np.sqrt(x/10)
+    b4 = np.arange(sig_len)/4
+    b5 = 10+np.arange(sig_len)/2
+    
+    
+    fig, axs = plt.subplots(basics,1,figsize=(14,8*basics))
+    
+    for i in range(basics):
+#         exec("global old_string; old_string = new_string")
+        exec(f'global base; base = b{i}')
+        col_arr = np.array(list(base), dtype=np.float64)
+        x_mean = np.mean(col_arr, axis=0)
+        x_var = np.var(col_arr, axis=0)
+        col_arr -= x_mean
+        if x_var:
+            col_arr /= x_var
+        else:
+            col_arr *= 0
+        X_norm = col_arr
+        
+        out_normalized = model(torch.Tensor(X_norm)).detach().numpy()
+        out = out_normalized * x_var
+        out += x_mean
+        
+        axs[i].plot(x, base, color = 'black', label='Изначальный сигнал')
+        axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
+        axs[i].legend()
+        delta = get_mse_delta(torch.Tensor(base),torch.Tensor(out))
+        max_error = get_max_error(base, out)
+        axs[i].set(title=f"MSE: {np.round(delta,4)}\nMax error: {np.round(max_error,2)}%")
+    
+    plt.show()
+    
+def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, without_unnorm=False):
+    origin_normalized = tensor.detach().numpy()
+    N = number_of_samples
+    samples_idxs = np.random.randint(0, len(tensor),size=N)
+    fig, axs = plt.subplots(N,1,figsize=(14,8*N))
+    x = np.arange(len(origin_normalized[0]))
+    if without_unnorm: # undone
+        for i in range(N):
+            idx = samples_idxs[i]
+            out_normalized = model(tensor[idx]).detach().numpy()
+            axs[i].plot(x, origin_normalized[idx], color = 'black', label='Изначальный сигнал,\nнормализованный')
+            axs[i].plot(x, out_normalized, color = 'red', label='Сгенерированный сигнал,\nнормализованный')
+            axs[i].legend()
+            delta = get_mse_delta(torch.Tensor(origin_normalized[idx]),torch.Tensor(out_normalized))
+            max_error = get_max_error(origin_normalized[idx], out_normalized)
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nMax error: {int(max_error+0.5)}%")
+    
+    else:
+        origin = origin_normalized * var
+        origin += mean
+        
+        for i in range(N):
+            idx = samples_idxs[i]
+            out_normalized = model(tensor[idx]).detach().numpy()
+            out = out_normalized * var
+            out += mean
+            axs[i].plot(x, origin[idx], color = 'black', label='Изначальный сигнал')
+            axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
+            axs[i].legend()
+            delta = get_mse_delta(torch.Tensor(origin[idx]),torch.Tensor(out))
+            max_error = get_max_error(origin[idx], out)
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nMax error: {int(max_error+0.5)}%")
+        
+    plt.show()
     
 
-
+def get_tensors_1param(dataframe, target_len, cut_len, count_per_signal, needed_param, random_state=42, test_size=0.02, random_start=True, get_mean=True) -> tuple:
+    activities = sep_by_len(dataframe, target_len)
+    cut_df = cut_act(activities, cut_len, count=count_per_signal, random_start=random_start)
+    X = cut_df.loc[:, needed_param].values
+    Y = cut_df.iloc[:, 0] # целевая переменная
+    y_targ = y_encode(Y)
     
+    col_arr = np.array(list(X), dtype=np.float64)
+    x_mean = np.mean(col_arr, axis=(0,1))
+    x_var = np.var(col_arr, axis=(0,1))
+    col_arr -= x_mean
+    if x_var:
+        col_arr /= x_var
+    else:
+        col_arr *= 0
+    X_norm = col_arr
+    
+    X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor = \
+    train_test_split(torch.FloatTensor(X_norm), torch.LongTensor(y_targ), random_state=random_state, test_size = test_size)
+    if get_mean:
+        return X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor, x_mean, x_var
+    else:
+        return X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor
     
