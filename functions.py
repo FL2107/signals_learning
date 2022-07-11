@@ -7,6 +7,7 @@ from skimage import transform
 import torch
 from typing import Union 
 from sklearn.model_selection import train_test_split
+import torch.nn as nn
 
 
 good_cols = ['activityID', 'heart rate', 'temperature hand',\
@@ -220,6 +221,38 @@ class SignalDataset(torch.utils.data.Dataset):
         
         return input_data, label
 
+class Linear_Autoencoder(nn.Module):
+    def __get_enc_layers(self, layers_param_count, activation):
+        layers = []
+        for i in range(len(layers_param_count)-2):
+            layers.append(nn.Linear(layers_param_count[i], layers_param_count[i+1]))
+            layers.append(activation())
+        layers.append(nn.Linear(layers_param_count[-2], layers_param_count[-1]))
+        return layers
+    
+    def __get_dec_layers(self, layers_param_count, activation):
+        layers = []
+        for i in range(len(layers_param_count)-1, 1, -1):
+            layers.append(nn.Linear(layers_param_count[i], layers_param_count[i-1]))
+            layers.append(activation())
+        layers.append(nn.Linear(layers_param_count[1], layers_param_count[0]))
+        return layers
+    
+    def __init__(self, layers_param_count, activation):
+        super(Linear_Autoencoder, self).__init__()
+        layers_enc = self.__get_enc_layers(layers_param_count, activation)
+        self.encoder = nn.Sequential(*layers_enc)
+        
+        layers_dec = self.__get_dec_layers(layers_param_count, activation)
+        self.decoder = nn.Sequential(*layers_dec)
+    
+    def forward(self, x):
+        enc = self.encoder(x)
+        dec = self.decoder(enc)
+        return dec
+
+    
+    
 def get_equal_len(X, need_len=-1, fill_with=0): # Доделать
     '''
     By default sets all signals to len of signal with maximum length, putting fill_with to the end of signal
@@ -291,6 +324,7 @@ def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
     plt.show()
     
 def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, without_unnorm=False):
+    np.random.seed(random_state)
     origin_normalized = tensor.detach().numpy()
     N = number_of_samples
     samples_idxs = np.random.randint(0, len(tensor),size=N)
@@ -349,4 +383,8 @@ def get_tensors_1param(dataframe, target_len, cut_len, count_per_signal, needed_
         return X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor, x_mean, x_var
     else:
         return X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor
+
+
+    
+    
     
