@@ -8,6 +8,7 @@ import torch
 from typing import Union 
 from sklearn.model_selection import train_test_split
 import torch.nn as nn
+import os
 
 
 good_cols = ['activityID', 'heart rate', 'temperature hand',\
@@ -228,13 +229,6 @@ def get_flatten(data):
 
 class SignalDataset(torch.utils.data.Dataset):
     def __init__(self, data_X, data_Y):
-        """
-        Args:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
         self.X = data_X
         self.Y = data_Y
 
@@ -246,6 +240,18 @@ class SignalDataset(torch.utils.data.Dataset):
         label = self.Y[idx]
         
         return input_data, label
+    
+class SignalDataset_1param(torch.utils.data.Dataset):
+    def __init__(self, data_X):
+        self.X = data_X
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        input_data = self.X[idx]
+        
+        return input_data
 
 class Linear_Autoencoder(nn.Module):
     def __get_enc_layers(self, layers_param_count, activation):
@@ -358,11 +364,11 @@ def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
     
     plt.show()
     
-def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, without_unnorm=False):
+def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, without_unnorm=False, without_sampling=False):
     np.random.seed(random_state)
     origin_normalized = tensor.detach().numpy()
     N = number_of_samples
-    samples_idxs = np.random.randint(0, len(tensor),size=N)
+    samples_idxs = np.arange(len(tensor)) if without_sampling else np.random.randint(0, len(tensor),size=N)
     fig, axs = plt.subplots(N,1,figsize=(14,8*N))
     x = np.arange(len(origin_normalized[0]))
     if without_unnorm: # undone
