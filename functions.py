@@ -18,6 +18,32 @@ good_cols = ['activityID', 'heart rate', 'temperature hand',\
              'temperature ankle', '3Da_x scale_16 ankle', '3Da_y scale_16 ankle', '3Da_z scale_16 ankle', \
              '3Dg_x ankle', '3Dg_y ankle', '3Dg_z ankle', '3Dm_x ankle', '3Dm_y ankle', '3Dm_z ankle']
 
+
+def print_signal(signal: Union[np.ndarray, list], style='plot') -> None:
+    '''
+    Draws plot or scatter (set by style) for signal or list of signals
+    style: dot or plot
+    '''
+    if isinstance(signal, list) or (isinstance(signal, np.ndarray) and signal[0].size != 1):
+        N = len(signal)
+        fig, axs = plt.subplots(N,1,figsize=(14,8*N))
+        for i, sig in enumerate(signal):
+            x = np.arange(sig.shape[0])
+            if style == 'plot':
+                axs[i].plot(x, sig)
+            elif style == 'dot':
+                axs[i].scatter(x, sig, s = 14*120/sig.shape[0])
+        
+    elif isinstance(signal, np.ndarray):
+        fig, axs = plt.subplots(1,1,figsize=(14,8))
+        x = np.arange(signal.shape[0])
+        if style == 'plot':
+            axs.plot(x, signal)
+        elif style == 'dot':
+            axs.scatter(x, signal, s = 14*120/signal.shape[0])
+    
+    plt.show()
+
 def y_encode(y_data):
     y_targ = np.zeros_like(y_data)
     code = list(np.unique(y_data))
@@ -281,9 +307,18 @@ def get_mse_delta(y_true: torch.Tensor, y_net: torch.Tensor) -> float:
     delta = loss(y_true, y_net).item()
     return delta
 
-def get_max_error(y_true: Union[list, np.ndarray], y_net: Union[list, np.ndarray]) -> float:
-    a = np.abs((np.array(y_true)-np.array(y_net))/(np.array(y_true)+ 1e-8)*100)
-    return np.max(a)
+def mse(x: np.ndarray, y: np.ndarray) -> float :
+    return ((x-y)**2).mean()
+
+def NMSE(x: np.ndarray, y: np.ndarray) -> float :
+    a = mse(x,y)
+    b = mse(x, np.zeros_like(x))
+    if b != 0:
+        return a/b
+    elif a==0 and b==0:
+        return 0
+    else:
+        return 1e8
 
 def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
     x = np.arange(sig_len)
@@ -318,8 +353,8 @@ def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
         axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
         axs[i].legend()
         delta = get_mse_delta(torch.Tensor(base),torch.Tensor(out))
-        max_error = get_max_error(base, out)
-        axs[i].set(title=f"MSE: {np.round(delta,4)}\nMax error: {np.round(max_error,2)}%")
+        nmse = NMSE(base, out)
+        axs[i].set(title=f"MSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
     
     plt.show()
     
@@ -338,8 +373,8 @@ def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, w
             axs[i].plot(x, out_normalized, color = 'red', label='Сгенерированный сигнал,\nнормализованный')
             axs[i].legend()
             delta = get_mse_delta(torch.Tensor(origin_normalized[idx]),torch.Tensor(out_normalized))
-            max_error = get_max_error(origin_normalized[idx], out_normalized)
-            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nMax error: {int(max_error+0.5)}%")
+            nmse = NMSE(origin_normalized[idx], out_normalized)
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
     
     else:
         origin = origin_normalized * var
@@ -354,11 +389,10 @@ def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, w
             axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
             axs[i].legend()
             delta = get_mse_delta(torch.Tensor(origin[idx]),torch.Tensor(out))
-            max_error = get_max_error(origin[idx], out)
-            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nMax error: {int(max_error+0.5)}%")
+            nmse = NMSE(origin[idx], out)
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
         
     plt.show()
-    
 
 def get_tensors_1param(dataframe, target_len, cut_len, count_per_signal, needed_param, random_state=42, test_size=0.02, random_start=True, get_mean=True) -> tuple:
     activities = sep_by_len(dataframe, target_len)
@@ -384,7 +418,74 @@ def get_tensors_1param(dataframe, target_len, cut_len, count_per_signal, needed_
     else:
         return X_train_tensor, X_val_tensor, y_train_tensor, y_val_tensor
 
+def write_signals_1param(dataframe, sig_len, count_per_signal, needed_params) -> None:
+    target_len = sig_len*count_per_signal
 
+    activities = sep_by_len(dataframe, target_len)
+    cut_df = cut_act(activities, sig_len, count_per_signal, random_start=False)
+    for needed_param in needed_params:
+        X = cut_df.loc[:, needed_param].values
+        X = np.array(list(X), dtype=np.float64)
+
+        if not os.path.isdir(f'1param_df/{needed_param}'):
+            os.mkdir(f'1param_df/{needed_param}')
+        np.save(f'1param_df/{needed_param}/sig_len{sig_len}', X)
+    return
     
-    
-    
+def load_signals_1param(sig_len, needed_param) -> Union[None, np.ndarray]:
+    '''
+    load np.ndaaray with signals of needed param and len in case of their existing
+    '''
+    if os.path.isdir(f'1param_df/{needed_param}'):
+        if f'sig_len{sig_len}.npy' in os.listdir(f'1param_df/{needed_param}'):
+            signals = np.load(f'1param_df/{needed_param}/sig_len{sig_len}.npy')
+            return signals
+        
+    return  
+
+def get_signal_groups(signals, nog, N=1000) -> list:
+    '''
+    nog = number of groups at the end
+    N = number of groups in the initial partition (accuracy)
+    '''
+    def concat(arr, idx1, idx2):
+        '''
+        inplace operation!
+        '''
+        if idx1 < idx2:
+            arr[idx1] += arr[idx2]
+            arr.pop(idx2)
+        elif idx1 > idx2:
+            arr[idx2] += arr[idx1]
+            arr.pop(idx1)
+            
+    sig_vars = signals.var(axis=1)
+    sig_groups = [[] for _ in range(N)]
+    MAX_VAR = np.max(sig_vars) + 1e-8
+    PART_VAR = MAX_VAR/N
+    for i, el in enumerate(sig_vars):
+    #     print(int(el//PART_VAR))
+        sig_groups[int(el//PART_VAR)].append(signals[i])
+
+    group_lens = [len(el) for el in sig_groups]
+    while len(sig_groups) != nog:
+        min_idx = np.argmin(group_lens)
+        lsg = len(sig_groups)
+        if min_idx == 0:
+            concat(sig_groups, 0, 1)
+            concat(group_lens, 0, 1)
+        elif min_idx == lsg-1:
+            concat(sig_groups, lsg-2, lsg-1)
+            concat(group_lens, lsg-2, lsg-1)
+        else:
+            if group_lens[min_idx-1] < group_lens[min_idx+1]:
+                concat(sig_groups, min_idx, min_idx-1)
+                concat(group_lens, min_idx, min_idx-1) 
+            else:
+                concat(sig_groups, min_idx, min_idx+1)
+                concat(group_lens, min_idx, min_idx+1) 
+                
+    return sig_groups
+        
+ 
+
