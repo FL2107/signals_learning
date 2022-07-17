@@ -313,12 +313,12 @@ def get_mse_delta(y_true: torch.Tensor, y_net: torch.Tensor) -> float:
     delta = loss(y_true, y_net).item()
     return delta
 
-def mse(x: np.ndarray, y: np.ndarray) -> float :
+def MSE(x: np.ndarray, y: np.ndarray) -> float :
     return ((x-y)**2).mean()
 
 def NMSE(x: np.ndarray, y: np.ndarray) -> float :
-    a = mse(x,y)
-    b = mse(x, np.zeros_like(x))
+    a = MSE(x,y)
+    b = MSE(x, np.zeros_like(x))
     if b != 0:
         return a/b
     elif a==0 and b==0:
