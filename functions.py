@@ -9,6 +9,7 @@ from typing import Union
 from sklearn.model_selection import train_test_split
 import torch.nn as nn
 import os
+from sklearn.cluster import KMeans
 
 
 good_cols = ['activityID', 'heart rate', 'temperature hand',\
@@ -20,7 +21,7 @@ good_cols = ['activityID', 'heart rate', 'temperature hand',\
              '3Dg_x ankle', '3Dg_y ankle', '3Dg_z ankle', '3Dm_x ankle', '3Dm_y ankle', '3Dm_z ankle']
 
 
-def print_signal(signal: Union[np.ndarray, list], style='plot') -> None:
+def print_signal(signal: Union[np.ndarray, list], style='plot', one_ax = False) -> None:
     '''
     Draws plot or scatter (set by style) for signal or list of signals
     style: dot or plot
@@ -307,11 +308,6 @@ def get_equal_len(X, need_len=-1, fill_with=0): # Доделать
         
     else: # Пока не сделано
         pass
-
-def get_mse_delta(y_true: torch.Tensor, y_net: torch.Tensor) -> float:
-    loss = torch.nn.MSELoss()
-    delta = loss(y_true, y_net).item()
-    return delta
 
 def MSE(x: np.ndarray, y: np.ndarray) -> float :
     return ((x-y)**2).mean()
