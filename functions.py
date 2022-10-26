@@ -354,9 +354,9 @@ def basic_func_check(model, sig_len, basics=6, sin_periods = 6):
         axs[i].plot(x, base, color = 'black', label='Изначальный сигнал')
         axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
         axs[i].legend()
-        delta = get_mse_delta(torch.Tensor(base),torch.Tensor(out))
+        mse = MSE(base, out)
         nmse = NMSE(base, out)
-        axs[i].set(title=f"MSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
+        axs[i].set(title=f"MSE: {np.round(mse,4)}\nNMSE: {np.round(nmse,5)}")
     
     plt.show()
     
@@ -374,9 +374,9 @@ def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, w
             axs[i].plot(x, origin_normalized[idx], color = 'black', label='Изначальный сигнал,\nнормализованный')
             axs[i].plot(x, out_normalized, color = 'red', label='Сгенерированный сигнал,\nнормализованный')
             axs[i].legend()
-            delta = get_mse_delta(torch.Tensor(origin_normalized[idx]),torch.Tensor(out_normalized))
+            mse = MSE(origin_normalized[idx], out_normalized)
             nmse = NMSE(origin_normalized[idx], out_normalized)
-            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(mse,4)}\nNMSE: {np.round(nmse,5)}")
     
     else:
         origin = origin_normalized * var
@@ -390,9 +390,9 @@ def tensor_check(model, tensor, number_of_samples, mean, var, random_state=42, w
             axs[i].plot(x, origin[idx], color = 'black', label='Изначальный сигнал')
             axs[i].plot(x, out, color = 'red', label='Сгенерированный сигнал')
             axs[i].legend()
-            delta = get_mse_delta(torch.Tensor(origin[idx]),torch.Tensor(out))
+            mse = MSE(origin[idx], out)
             nmse = NMSE(origin[idx], out)
-            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(delta,4)}\nNMSE: {np.round(nmse,5)}")
+            axs[i].set(title=f"number of sample: {idx}\nMSE: {np.round(mse,4)}\nNMSE: {np.round(nmse,5)}")
         
     plt.show()
 
